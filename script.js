@@ -7,9 +7,10 @@ onload = function () {
     const solve = document.getElementById('solve');
     const temptext = document.getElementById('temptext');
     const temptext2 = document.getElementById('temptext2');
+    //giving total 10 entries
     const cities = ['Delhi', 'Mumbai', 'Gujarat', 'Goa', 'Kanpur', 'Jammu', 'Hyderabad', 'Bangalore', 'Gangtok', 'Meghalaya'];
 
-    // initialise graph options
+    // initialise graph options using features of visjs library
     const options = {
         edges: {
             labelHighlightBold: true,
@@ -26,22 +27,27 @@ onload = function () {
             icon: {
                 face: 'FontAwesome',
                 code: '\uf015',
-                size: 40,
-                color: '#991133',
+                size: 50,
+                color: '#483D8B',
             }
         }
     };
 
-    // Initialize your network!
-    // Network for question graph
+    // Initializing  network!
+    // Network for question (left) graph
     const network = new vis.Network(container);
     network.setOptions(options);
-    // Network for result graph
+    // Network for result(right) graph
     const network2 = new vis.Network(container2);
     network2.setOptions(options);
 
+
+
+
+                              //createdata function creates dummy data ie random question generate
     function createData(){
-        V = Math.floor(Math.random() * 8) + 3; // Ensures V is between 3 and 10
+        V = Math.floor(Math.random() * 8) + 3; // Ensures V is between 3 and 10(min 3 nodes ka graph to chahiye na) 
+                                               //Math.random func return any number in [0,1)]
         let nodes = [];
         for(let i=1;i<=V;i++){
             nodes.push({id:i, label: cities[i-1]})
@@ -53,18 +59,18 @@ onload = function () {
         let edges = [];
         for(let i=2;i<=V;i++){
             let neigh = i - Math.floor(Math.random()*Math.min(i-1,3)+1); // Picks a neighbour from i-3 to i-1
-            edges.push({type: 0, from: i, to: neigh, color: 'orange',label: String(Math.floor(Math.random()*70)+31)});
+            edges.push({type: 0, from: i, to: neigh, color: 'orange', label: String(Math.floor(Math.random()*70)+31)});
         }
 
         // Randomly adding new edges to graph
         // Type of bus is 0
-        // Type of plane is 1
+        // Type of flight is 1
         for(let i=1;i<=V/2;){
 
             let n1 = Math.floor(Math.random()*V)+1;
             let n2 = Math.floor(Math.random()*V)+1;
             if(n1!==n2){
-                if(n1<n2){
+                if(n1<n2){              //bus links should be greater than flight links
                     let tmp = n1;
                     n1 = n2;
                     n2 = tmp;
@@ -83,7 +89,7 @@ onload = function () {
 
                 // Adding edges to the graph
                 // If works == 0, you can add bus as well as plane between vertices
-                // If works == 1, you can only add plane between them
+                // If works == 1, you can only add plane between them    as bus link already there btw them
                 if(works <= 1) {
                     if (works === 0 && i < V / 4) {
                         // Adding a bus
@@ -122,7 +128,7 @@ onload = function () {
         // Create new data and display the data
         createData();
         network.setData(curr_data);
-        temptext2.innerText = 'Find least time path from '+cities[src-1]+' to '+cities[dst-1];
+        temptext2.innerText = 'Find the least distance path from "'+cities[src-1]+'" to "'+cities[dst-1]+'"';
         temptext.style.display = "inline";
         temptext2.style.display = "inline";
         container2.style.display = "none";
@@ -131,17 +137,22 @@ onload = function () {
 
     solve.onclick = function () {
         // Create graph from data and set to display
-        temptext.style.display  = "none";
+        temptext.style.display  = "none";  //removes question lines from right side
         temptext2.style.display  = "none";
         container2.style.display = "inline";
-        network2.setData(solveData());
+        network2.setData(solveData()); //calls solveData function down below
     };
 
-    function djikstra(graph, sz, src) {
-        let vis = Array(sz).fill(0);
+
+
+
+
+    function djikstra(graph, sz, src) {   //graph,V,src
+        let vis = Array(sz).fill(0);     //visites array initialized to 0
         let dist = [];
         for(let i=1;i<=sz;i++)
-            dist.push([10000,-1]);
+            dist.push([10000,-1]);   //10000 is as infinity here...we initialize distances to inf
+                                     //second var -1 is to keep track of parent node from which this shortest dist came
         dist[src][0] = 0;
 
         for(let i=0;i<sz-1;i++){
@@ -166,24 +177,27 @@ onload = function () {
         return dist;
     }
 
-    function createGraph(data){
-        let graph = [];
+    function createGraph(data){      //data here is actually curr_data which has nodes and edges
+        let graph = [];              //graph array
         for(let i=1;i<=V;i++){
-            graph.push([]);
+            graph.push([]);          //array containing arrays
         }
 
         for(let i=0;i<data['edges'].length;i++) {
             let edge = data['edges'][i];
-            if(edge['type']===1)
+            if(edge['type']===1)        //1 was for flight edge
                 continue;
             graph[edge['to']-1].push([edge['from']-1,parseInt(edge['label'])]);
             graph[edge['from']-1].push([edge['to']-1,parseInt(edge['label'])]);
         }
         return graph;
     }
+        
 
+        //there's this condition that we can take only one flight in whole travel
     function shouldTakePlane(edges, dist1, dist2, mn_dist) {
-        let plane = 0;
+        let plane = 0;   //var which stores 0 if we shouldnt take a plane , but stores wt of plane path if we shpuld take a plane
+
         let p1=-1, p2=-1;
         for(let pos in edges){
             let edge = edges[pos];
@@ -207,7 +221,7 @@ onload = function () {
         }
         return {plane, p1, p2};
     }
-
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
     function solveData() {
 
         const data = curr_data;
@@ -240,7 +254,7 @@ onload = function () {
         };
         return ans_data;
     }
-
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
     function pushEdges(dist, curr, reverse) {
         let tmp_edges = [];
         while(dist[curr][0]!==0){
